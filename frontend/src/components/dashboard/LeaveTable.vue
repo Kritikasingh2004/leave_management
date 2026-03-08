@@ -192,29 +192,21 @@ async function confirmRejection() {
         <TableCell>{{ formatDate(leave.start_date) }}</TableCell>
         <TableCell>{{ formatDate(leave.end_date) }}</TableCell>
         <TableCell class="max-w-50">
-          <TooltipProvider>
-            <Tooltip>
-              <TooltipTrigger as-child>
-                <span class="block truncate cursor-default">
-                  {{ leave.reason || "—" }}
-                </span>
-              </TooltipTrigger>
-              <TooltipContent v-if="leave.reason" side="top" class="max-w-xs">
-                {{ leave.reason }}
-              </TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
+          {{ leave.reason || "—" }}
         </TableCell>
         <TableCell>
           <TooltipProvider v-if="leave.status === 'rejected'">
             <Tooltip>
               <TooltipTrigger as-child>
-                <Badge :class="badgeClass(leave.status)" class="capitalize cursor-default">
+                <Badge
+                  :class="badgeClass(leave.status)"
+                  class="capitalize cursor-default"
+                >
                   {{ leave.status }}
                 </Badge>
               </TooltipTrigger>
               <TooltipContent side="top" class="max-w-xs">
-                {{ leave.admin_note || 'No reason provided' }}
+                {{ leave.admin_note || "No reason provided" }}
               </TooltipContent>
             </Tooltip>
           </TooltipProvider>
