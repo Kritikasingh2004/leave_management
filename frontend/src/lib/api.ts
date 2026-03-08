@@ -13,11 +13,12 @@ api.interceptors.request.use((config) => {
   return config;
 });
 
-// Redirect to login on 401 responses
+// Redirect to login on 401 responses (skip for login requests)
 api.interceptors.response.use(
   (response) => response,
   (error) => {
-    if (error.response?.status === 401) {
+    const isLoginRequest = error.config?.url?.includes("/auth/login");
+    if (error.response?.status === 401 && !isLoginRequest) {
       localStorage.removeItem("token");
       localStorage.removeItem("user");
       window.location.href = "/login?expired=true";

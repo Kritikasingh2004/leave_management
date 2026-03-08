@@ -68,6 +68,6 @@ app.include_router(leave_router)
 
 
 # ── Health check ─────────────────────────────────
-@app.get("/")
+@app.get("/", methods=["GET", "HEAD"])
 def root():
     return {"message": "Leave Management API is running"}
