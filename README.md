@@ -189,25 +189,39 @@ FastAPI auto-generates interactive API docs — visit **`/docs`** (Swagger UI) o
 
 ## 🌐 Deployment
 
-### Backend (e.g., Render / Railway)
+### Deployment Topology
 
-1. Push the `backend/` directory to a Git repository.
-2. Set environment variables on the platform:
-   - `MONGO_DETAILS` — Your MongoDB Atlas connection string.
-   - `JWT_SECRET` — A strong, random secret key.
-   - `JWT_EXPIRE_MINUTES` — Token expiry (e.g., `60`).
-3. Set the **start command** to:
+This app uses a **Decoupled Architecture**: a statically-hosted Vue 3 frontend communicates over REST with a containerized FastAPI backend, while **MongoDB Atlas** serves as the persistent data layer. The frontend and backend are deployed independently — the frontend is a pure static build served by Vercel's CDN, and the backend runs as a long-lived process on Render. The two are connected at runtime by the `VITE_API_URL` (baked into the frontend at build time) and the `FRONTEND_URL` (used by the backend for CORS).
+
+### Backend (Render)
+
+1. Create a new **Web Service** on [Render](https://render.com) and connect your repository.
+2. Set the **Root Directory** to `backend`.
+3. Set the **Build Command** to:
+   ```bash
+   uv sync
+   ```
+4. Set the **Start Command** to:
    ```bash
    uv run uvicorn main:app --host 0.0.0.0 --port $PORT
    ```
+5. Add these **Environment Variables** before the first deploy:
+   - `MONGO_DETAILS` — Your MongoDB Atlas connection string.
+   - `JWT_SECRET` — A strong, random secret key.
+   - `JWT_EXPIRE_MINUTES` — Token expiry (e.g., `60`).
+6. Deploy the backend. Once it's live, note the service URL (e.g., `https://your-backend.onrender.com`).
+7. **After the frontend is live**, come back and add one more environment variable:
+   - `FRONTEND_URL` — The deployed frontend URL (e.g., `https://your-app.vercel.app`).
+8. **Redeploy** the backend so the CORS middleware picks up the new `FRONTEND_URL` and allows cross-origin requests from the frontend.
 
-### Frontend (e.g., Vercel / Netlify)
+### Frontend (Vercel)
 
-1. Push the `frontend/` directory to a Git repository.
-2. Set the environment variable:
-   - `VITE_API_URL` — URL of the deployed backend.
-3. Set the **build command** to `npm run build` and the **output directory** to `dist`.
-4. Add a rewrite/redirect rule to serve `index.html` for all routes (SPA fallback).
+1. Import your repository into [Vercel](https://vercel.com).
+2. Set the **Root Directory** to `frontend`.
+3. **Before the first deployment**, add this environment variable so the build embeds the correct API base URL:
+   - `VITE_API_URL` — The deployed backend URL (e.g., `https://your-backend.onrender.com`).
+4. Deploy. Vercel will auto-detect Vite, run `npm run build`, and serve the `dist` output.
+5. A `vercel.json` file is included in the `frontend/` directory to configure SPA routing — it rewrites all paths to `index.html`, preventing 404 errors on page refresh when using Vue Router in history mode.
 
 ---
 
