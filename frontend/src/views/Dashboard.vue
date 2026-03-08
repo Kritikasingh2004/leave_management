@@ -1,12 +1,16 @@
 <script setup lang="ts">
 import { ref, onMounted, computed } from "vue";
 import { useRouter } from "vue-router";
+import { useForm } from "vee-validate";
+import { toTypedSchema } from "@vee-validate/zod";
+import { z } from "zod";
+import { Loader2 } from "lucide-vue-next";
+import { toast } from "vue-sonner";
 import api from "@/lib/api";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import {
   Select,
   SelectContent,
@@ -23,6 +27,13 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import {
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
 
 const router = useRouter();
 
@@ -51,13 +62,34 @@ const leaves = ref<LeaveRequest[]>([]);
 const isEmployee = computed(() => user.value?.role === "employee");
 const isEmployer = computed(() => user.value?.role === "employer");
 
-// ── Leave form state ────────────────────────────────────────────────────────
-const leaveType = ref("casual");
-const startDate = ref("");
-const endDate = ref("");
-const reason = ref("");
-const formError = ref("");
-const formLoading = ref(false);
+// ── Leave application Zod schema ────────────────────────────────────────────
+const leaveSchema = toTypedSchema(
+  z
+    .object({
+      type: z.enum(["sick", "casual", "annual", "other"], {
+        required_error: "Please select a leave type",
+      }),
+      start_date: z.string().min(1, "Start date is required"),
+      end_date: z.string().min(1, "End date is required"),
+      reason: z.string().min(1, "Reason is required"),
+    })
+    .refine((data) => new Date(data.end_date) >= new Date(data.start_date), {
+      message: "End date cannot be before start date",
+      path: ["end_date"],
+    }),
+);
+
+const { handleSubmit, resetForm } = useForm({
+  validationSchema: leaveSchema,
+  initialValues: {
+    type: "casual",
+    start_date: "",
+    end_date: "",
+    reason: "",
+  },
+});
+
+const isSubmitting = ref(false);
 
 // ── Lifecycle ───────────────────────────────────────────────────────────────
 onMounted(() => {
@@ -80,36 +112,34 @@ async function fetchLeaves() {
 }
 
 // ── Apply for leave (Employee) ──────────────────────────────────────────────
-async function applyLeave() {
-  formError.value = "";
-  formLoading.value = true;
+const applyLeave = handleSubmit(async (values) => {
+  isSubmitting.value = true;
   try {
     await api.post("/leaves/apply", {
-      type: leaveType.value,
-      start_date: startDate.value,
-      end_date: endDate.value,
-      reason: reason.value,
+      type: values.type,
+      start_date: values.start_date,
+      end_date: values.end_date,
+      reason: values.reason,
     });
-    // Reset form
-    leaveType.value = "casual";
-    startDate.value = "";
-    endDate.value = "";
-    reason.value = "";
+    toast.success("Leave applied successfully!");
+    resetForm();
     await fetchLeaves();
   } catch (err: any) {
-    formError.value = err.response?.data?.detail || "Failed to apply";
+    const message = err.response?.data?.detail || "Failed to apply for leave";
+    toast.error("Leave application failed", { description: message });
   } finally {
-    formLoading.value = false;
+    isSubmitting.value = false;
   }
-}
+});
 
 // ── Approve / Reject (Employer) ─────────────────────────────────────────────
 async function updateStatus(leaveId: string, status: "approved" | "rejected") {
   try {
     await api.patch(`/leaves/${leaveId}`, { status });
+    toast.success(`Leave request ${status}`);
     await fetchLeaves();
   } catch {
-    // silently fail for now
+    toast.error("Failed to update leave status");
   }
 }
 
@@ -161,46 +191,67 @@ function badgeVariant(
             <CardTitle>Request Leave</CardTitle>
           </CardHeader>
           <CardContent>
-            <form
-              class="grid gap-4 sm:grid-cols-2"
-              @submit.prevent="applyLeave"
-            >
-              <div class="space-y-2">
-                <Label>Leave Type</Label>
-                <Select v-model="leaveType">
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select type" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="sick">Sick</SelectItem>
-                    <SelectItem value="casual">Casual</SelectItem>
-                    <SelectItem value="annual">Annual</SelectItem>
-                    <SelectItem value="other">Other</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div class="space-y-2">
-                <Label for="start">Start Date</Label>
-                <Input id="start" v-model="startDate" type="date" required />
-              </div>
-              <div class="space-y-2">
-                <Label for="end">End Date</Label>
-                <Input id="end" v-model="endDate" type="date" required />
-              </div>
-              <div class="space-y-2 sm:col-span-2">
-                <Label for="reason">Reason</Label>
-                <Input
-                  id="reason"
-                  v-model="reason"
-                  placeholder="Brief reason for leave"
-                />
-              </div>
+            <form class="grid gap-4 sm:grid-cols-2" @submit="applyLeave">
+              <FormField v-slot="{ componentField }" name="type">
+                <FormItem class="space-y-2">
+                  <FormLabel>Leave Type</FormLabel>
+                  <Select v-bind="componentField">
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select type" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      <SelectItem value="sick">Sick</SelectItem>
+                      <SelectItem value="casual">Casual</SelectItem>
+                      <SelectItem value="annual">Annual</SelectItem>
+                      <SelectItem value="other">Other</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              </FormField>
+
+              <FormField v-slot="{ componentField }" name="start_date">
+                <FormItem class="space-y-2">
+                  <FormLabel>Start Date</FormLabel>
+                  <FormControl>
+                    <Input type="date" v-bind="componentField" />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              </FormField>
+
+              <FormField v-slot="{ componentField }" name="end_date">
+                <FormItem class="space-y-2">
+                  <FormLabel>End Date</FormLabel>
+                  <FormControl>
+                    <Input type="date" v-bind="componentField" />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              </FormField>
+
+              <FormField v-slot="{ componentField }" name="reason">
+                <FormItem class="space-y-2 sm:col-span-2">
+                  <FormLabel>Reason</FormLabel>
+                  <FormControl>
+                    <Input
+                      placeholder="Brief reason for leave"
+                      v-bind="componentField"
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              </FormField>
+
               <div class="sm:col-span-2">
-                <p v-if="formError" class="text-sm text-destructive mb-2">
-                  {{ formError }}
-                </p>
-                <Button type="submit" :disabled="formLoading">
-                  {{ formLoading ? "Submitting…" : "Submit Request" }}
+                <Button type="submit" :disabled="isSubmitting">
+                  <Loader2
+                    v-if="isSubmitting"
+                    class="size-4 mr-2 animate-spin"
+                  />
+                  {{ isSubmitting ? "Submitting…" : "Submit Request" }}
                 </Button>
               </div>
             </form>
