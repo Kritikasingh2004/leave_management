@@ -214,8 +214,11 @@ async function confirmRejection() {
             {{ leave.status }}
           </Badge>
         </TableCell>
-        <TableCell v-if="isAdmin" class="text-right space-x-2">
-          <template v-if="leave.status === 'pending'">
+        <TableCell v-if="isAdmin" class="text-right">
+          <div
+            v-if="leave.status === 'pending'"
+            class="flex flex-wrap justify-end gap-2"
+          >
             <Button
               size="sm"
               variant="neutral"
@@ -236,7 +239,7 @@ async function confirmRejection() {
             >
               Reject
             </Button>
-          </template>
+          </div>
           <span v-else class="text-sm text-muted-foreground">—</span>
         </TableCell>
       </TableRow>
