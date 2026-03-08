@@ -1,6 +1,7 @@
 <script setup lang="ts">
-import { ref } from "vue";
-import { useRouter } from "vue-router";
+import { ref, onMounted } from "vue";
+import { useRouter, useRoute } from "vue-router";
+import { toast } from "vue-sonner";
 import AuthForm from "@/components/auth/AuthForm.vue";
 import { Button } from "@/components/ui/button";
 import {
@@ -12,7 +13,16 @@ import {
 } from "@/components/ui/card";
 
 const router = useRouter();
+const route = useRoute();
 const isRegister = ref(false);
+
+onMounted(() => {
+  if (route.query.expired === "true") {
+    toast.info("Session Expired", {
+      description: "Please log in again to continue.",
+    });
+  }
+});
 
 function onAuthSuccess() {
   router.push("/dashboard");
@@ -40,8 +50,8 @@ function onAuthSuccess() {
             isRegister ? "Already have an account?" : "Don't have an account?"
           }}
           <Button
-            variant="link"
-            class="p-0 h-auto"
+            variant="ghost"
+            class="p-0 h-auto cursor-pointer"
             @click="isRegister = !isRegister"
           >
             {{ isRegister ? "Login" : "Register" }}

@@ -1,5 +1,4 @@
 import axios from "axios";
-import router from "@/router";
 
 const api = axios.create({
   baseURL: import.meta.env.VITE_API_URL || "http://localhost:8000",
@@ -21,7 +20,7 @@ api.interceptors.response.use(
     if (error.response?.status === 401) {
       localStorage.removeItem("token");
       localStorage.removeItem("user");
-      router.push({ name: "Login" });
+      window.location.href = "/login?expired=true";
     }
     return Promise.reject(error);
   },

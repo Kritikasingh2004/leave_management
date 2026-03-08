@@ -52,23 +52,16 @@ const historyLeaves = computed(() =>
 // ── Lifecycle ───────────────────────────────────────────────────────────────
 onMounted(async () => {
   isLoading.value = true;
-  // Prefer /auth/me to validate token; fall back to localStorage
   try {
     const { data } = await api.get("/auth/me");
     user.value = data;
-    // Keep localStorage in sync
     localStorage.setItem("user", JSON.stringify(data));
+    await fetchLeaves();
   } catch {
-    const stored = localStorage.getItem("user");
-    if (!stored) {
-      router.push("/login");
-      return;
-    }
-    user.value = JSON.parse(stored);
+    // 401 is handled globally by the Axios interceptor
+  } finally {
+    isLoading.value = false;
   }
-
-  await fetchLeaves();
-  isLoading.value = false;
 });
 
 async function fetchLeaves() {
