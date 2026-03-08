@@ -37,7 +37,7 @@ const emit = defineEmits<{
   (e: "submitted"): void;
 }>();
 
-// ── Zod schema with refine ──────────────────────────────────────────────────
+// ── Zod schema ──────────────────────────────────────────────────
 const leaveSchema = toTypedSchema(
   z
     .object({
@@ -182,7 +182,7 @@ const onSubmit = handleSubmit(async (vals) => {
       </FormItem>
     </FormField>
 
-    <!-- End Date — Popover + Calendar -->
+    <!-- End Date -->
     <FormField name="end_date">
       <FormItem class="space-y-2">
         <FormLabel>End Date</FormLabel>

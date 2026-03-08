@@ -165,7 +165,7 @@ async function onSubmit(values: Record<string, any>) {
       </FormItem>
     </FormField>
 
-    <!-- Submit button with loader -->
+    <!-- Submit -->
     <Button type="submit" class="w-full" :disabled="isSubmitting">
       <Loader2 v-if="isSubmitting" class="size-4 mr-2 animate-spin" />
       {{ isSubmitting ? "Please wait…" : isRegister ? "Register" : "Login" }}

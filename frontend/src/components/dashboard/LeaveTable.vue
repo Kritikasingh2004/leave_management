@@ -62,7 +62,7 @@ const emit = defineEmits<{
   (e: "updated"): void;
 }>();
 
-// ── Loading state per leave (for Approve spinner) ───────────────────────────
+// ── Loading state per leave ───────────────────────────
 const loadingId = ref<string | null>(null);
 
 // ── Rejection dialog state ──────────────────────────────────────────────────
@@ -91,7 +91,7 @@ function badgeClass(status: string): string {
   }
 }
 
-// ── Approve (immediate) ─────────────────────────────────────────────────────
+// ── Approve ─────────────────────────────────────────────────────
 async function approveLeave(leaveId: string) {
   loadingId.value = leaveId;
   try {
@@ -106,7 +106,7 @@ async function approveLeave(leaveId: string) {
   }
 }
 
-// ── Reject (via dialog confirmation) ────────────────────────────────────────
+// ── Reject ────────────────────────────────────────
 async function confirmRejection() {
   if (!rejectLeaveId.value) return;
   if (!adminNote.value.trim()) {
