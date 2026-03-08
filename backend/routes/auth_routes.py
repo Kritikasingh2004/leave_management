@@ -28,7 +28,10 @@ async def register(payload: UserCreate):
     try:
         await users_collection.insert_one(user_doc)
     except pymongo.errors.DuplicateKeyError:
-        raise HTTPException(status_code=400, detail="Email already registered")
+        raise HTTPException(
+            status_code=400,
+            detail="An account with this email already exists.",
+        )
 
     return TokenResponse(
         access_token=create_access_token(user_id),

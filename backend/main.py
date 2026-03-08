@@ -1,5 +1,7 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
+from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
 from contextlib import asynccontextmanager
 from dotenv import load_dotenv
 
@@ -22,6 +24,21 @@ app = FastAPI(
     version="0.1.0",
     lifespan=lifespan
 )
+
+
+# ── Validation error handler ────────────────────
+@app.exception_handler(RequestValidationError)
+async def validation_exception_handler(request: Request, exc: RequestValidationError):
+    """Return the first validation error as a plain detail string."""
+    errors = exc.errors()
+    if errors:
+        first = errors[0]
+        field = first.get("loc", [""])[-1]
+        msg = first.get("msg", "Validation error")
+        detail = f"{field}: {msg}" if field else msg
+    else:
+        detail = "Validation error"
+    return JSONResponse(status_code=422, content={"detail": detail})
 
 
 # ── CORS ────────────────────────────────────────

@@ -5,6 +5,10 @@ import Dashboard from "@/views/Dashboard.vue";
 const routes = [
   {
     path: "/",
+    redirect: "/login",
+  },
+  {
+    path: "/login",
     name: "Login",
     component: Login,
   },
@@ -23,8 +27,14 @@ const router = createRouter({
 
 // Navigation guard — protect routes that require authentication
 router.beforeEach((to, _from, next) => {
-  if (to.meta.requiresAuth && !localStorage.getItem("token")) {
+  const token = localStorage.getItem("token");
+
+  if (to.meta.requiresAuth && !token) {
+    // Not logged in → redirect to login
     next({ name: "Login" });
+  } else if (to.name === "Login" && token) {
+    // Already logged in → redirect to dashboard
+    next({ name: "Dashboard" });
   } else {
     next();
   }
