@@ -1,4 +1,5 @@
 from fastapi import APIRouter, HTTPException, Depends
+import pymongo.errors
 
 from models import (
     UserCreate,
@@ -15,10 +16,6 @@ router = APIRouter(prefix="/auth", tags=["Auth"])
 
 @router.post("/register", response_model=TokenResponse)
 async def register(payload: UserCreate):
-    existing = await users_collection.find_one({"email": payload.email})
-    if existing:
-        raise HTTPException(status_code=400, detail="Email already registered")
-
     user_id = generate_id()
     user_doc = {
         "_id": user_id,
@@ -27,7 +24,11 @@ async def register(payload: UserCreate):
         "password": hash_password(payload.password),
         "role": payload.role,
     }
-    await users_collection.insert_one(user_doc)
+
+    try:
+        await users_collection.insert_one(user_doc)
+    except pymongo.errors.DuplicateKeyError:
+        raise HTTPException(status_code=400, detail="Email already registered")
 
     return TokenResponse(
         access_token=create_access_token(user_id),

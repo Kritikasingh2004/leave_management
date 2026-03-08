@@ -7,7 +7,7 @@ from models import (
     generate_id,
 )
 from database import leaves_collection
-from auth import get_current_user
+from auth import get_current_user, require_employee, require_employer
 
 router = APIRouter(prefix="/leaves", tags=["Leaves"])
 
@@ -15,11 +15,8 @@ router = APIRouter(prefix="/leaves", tags=["Leaves"])
 @router.post("/apply", response_model=LeaveRequestOut)
 async def apply_leave(
     payload: LeaveRequestCreate,
-    current_user: dict = Depends(get_current_user),
+    current_user: dict = Depends(require_employee),
 ):
-    if current_user["role"] != "employee":
-        raise HTTPException(status_code=403, detail="Only employees can apply for leave")
-
     leave_id = generate_id()
     leave_doc = {
         "_id": leave_id,
@@ -70,11 +67,8 @@ async def get_leaves(current_user: dict = Depends(get_current_user)):
 async def update_leave_status(
     leave_id: str,
     payload: LeaveRequestUpdate,
-    current_user: dict = Depends(get_current_user),
+    current_user: dict = Depends(require_employer),
 ):
-    if current_user["role"] != "employer":
-        raise HTTPException(status_code=403, detail="Only employers can approve/reject leaves")
-
     leave = await leaves_collection.find_one({"_id": leave_id})
     if not leave:
         raise HTTPException(status_code=404, detail="Leave request not found")
