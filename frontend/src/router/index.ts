@@ -18,6 +18,11 @@ const routes = [
     component: Dashboard,
     meta: { requiresAuth: true },
   },
+  {
+    path: "/:pathMatch(.*)*",
+    name: "NotFound",
+    component: () => import("../views/NotFound.vue"),
+  },
 ];
 
 const router = createRouter({
@@ -25,7 +30,7 @@ const router = createRouter({
   routes,
 });
 
-// Navigation guard — protect routes that require authentication
+// Navigation guard
 router.beforeEach((to, _from, next) => {
   const token = localStorage.getItem("token");
 

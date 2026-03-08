@@ -1,3 +1,5 @@
+import os
+
 from fastapi import FastAPI, Request
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
@@ -11,9 +13,12 @@ from routes.leave_routes import router as leave_router
 
 load_dotenv()
 
+frontend_url = os.getenv("FRONTEND_URL", "http://localhost:5173")
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    print(f"Allowed CORS Origin: {frontend_url}")
     await users_collection.create_index("email", unique=True)
 
     yield
@@ -42,9 +47,11 @@ async def validation_exception_handler(request: Request, exc: RequestValidationE
 
 
 # ── CORS ────────────────────────────────────────
+allowed_origins = list({frontend_url, "http://localhost:5173", "http://127.0.0.1:5173"})
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173"],
+    allow_origins=allowed_origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
