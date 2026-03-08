@@ -1,4 +1,4 @@
-from pydantic import BaseModel, EmailStr, Field, model_validator
+from pydantic import BaseModel, EmailStr, Field, field_validator, model_validator
 from typing import Literal
 from datetime import date
 import uuid
@@ -18,10 +18,20 @@ class UserCreate(BaseModel):
     password: str = Field(..., min_length=8, max_length=64)
     role: Literal["employee", "employer"] = "employee"
 
+    @field_validator("email")
+    @classmethod
+    def normalize_email(cls, v: str) -> str:
+        return v.strip().lower()
+
 
 class UserLogin(BaseModel):
     email: EmailStr
     password: str = Field(..., min_length=8, max_length=64)
+
+    @field_validator("email")
+    @classmethod
+    def normalize_email(cls, v: str) -> str:
+        return v.strip().lower()
 
 
 class UserOut(BaseModel):

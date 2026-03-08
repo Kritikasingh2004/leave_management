@@ -51,13 +51,15 @@ const activeSchema = computed(() =>
   toTypedSchema(isRegister.value ? registerSchema : loginSchema),
 );
 
-// ── Form submission (receives validated values from <Form>) ─────────────────
+// ── Form submission ─────────────────
 async function onSubmit(values: Record<string, any>) {
   try {
+    const normalizedEmail = values.email.trim().toLowerCase();
+
     if (isRegister.value) {
       const { data } = await api.post("/auth/register", {
         name: values.name,
-        email: values.email,
+        email: normalizedEmail,
         password: values.password,
         role: values.role,
       });
@@ -66,7 +68,7 @@ async function onSubmit(values: Record<string, any>) {
       toast.success("Account created successfully!");
     } else {
       const { data } = await api.post("/auth/login", {
-        email: values.email,
+        email: normalizedEmail,
         password: values.password,
       });
       localStorage.setItem("token", data.access_token);
@@ -85,7 +87,6 @@ async function onSubmit(values: Record<string, any>) {
 </script>
 
 <template>
-  <!-- Shadcn <Form> wrapper — handles validation & submit -->
   <Form
     v-slot="{ isSubmitting }"
     :validation-schema="activeSchema"
@@ -139,7 +140,7 @@ async function onSubmit(values: Record<string, any>) {
       </FormItem>
     </FormField>
 
-    <!-- Password with show / hide toggle -->
+    <!-- Password -->
     <FormField v-slot="{ componentField }" name="password">
       <FormItem>
         <FormLabel>Password</FormLabel>
