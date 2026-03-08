@@ -1,8 +1,13 @@
 <script setup lang="ts">
+import "vue-sonner/style.css";
 import { Toaster } from "@/components/ui/sonner";
 </script>
 
 <template>
-  <Toaster richColors position="top-right" closeButton />
-  <router-view />
+  <div>
+    <main>
+      <router-view />
+    </main>
+    <Toaster />
+  </div>
 </template>
