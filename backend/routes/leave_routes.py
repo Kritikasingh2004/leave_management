@@ -58,12 +58,13 @@ async def get_leaves(current_user: dict = Depends(get_current_user)):
             end_date=l["end_date"],
             reason=l["reason"],
             status=l["status"],
+            admin_note=l.get("admin_note", ""),
         )
         for l in leaves
     ]
 
 
-@router.patch("/{leave_id}", response_model=LeaveRequestOut)
+@router.patch("/{leave_id}/status", response_model=LeaveRequestOut)
 async def update_leave_status(
     leave_id: str,
     payload: LeaveRequestUpdate,
@@ -73,12 +74,16 @@ async def update_leave_status(
     if not leave:
         raise HTTPException(status_code=404, detail="Leave request not found")
 
+    update_fields: dict = {"status": payload.status}
+    if payload.status == "rejected" and payload.admin_note:
+        update_fields["admin_note"] = payload.admin_note
+
     await leaves_collection.update_one(
         {"_id": leave_id},
-        {"$set": {"status": payload.status}},
+        {"$set": update_fields},
     )
 
-    leave["status"] = payload.status
+    leave.update(update_fields)
     return LeaveRequestOut(
         id=leave["_id"],
         employee_id=leave["employee_id"],
@@ -88,4 +93,5 @@ async def update_leave_status(
         end_date=leave["end_date"],
         reason=leave["reason"],
         status=leave["status"],
+        admin_note=leave.get("admin_note", ""),
     )

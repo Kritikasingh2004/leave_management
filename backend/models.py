@@ -54,6 +54,7 @@ class LeaveRequestCreate(BaseModel):
 
 class LeaveRequestUpdate(BaseModel):
     status: Literal["approved", "rejected"]
+    admin_note: str = Field(default="", max_length=500)
 
 
 class LeaveRequestOut(BaseModel):
@@ -65,3 +66,4 @@ class LeaveRequestOut(BaseModel):
     end_date: date
     reason: str
     status: Literal["pending", "approved", "rejected"]
+    admin_note: str = ""
