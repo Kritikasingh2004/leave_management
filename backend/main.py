@@ -13,12 +13,12 @@ from routes.leave_routes import router as leave_router
 
 load_dotenv()
 
-frontend_url = os.getenv("FRONTEND_URL", "http://localhost:5173")
-
+raw_url = os.getenv("FRONTEND_URL", "http://localhost:5173")
+frontend_url = raw_url.strip().rstrip("/")
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    print(f"Allowed CORS Origin: {frontend_url}")
+    print(f"DEBUG: Setting CORS to: '{frontend_url}'")
     await users_collection.create_index("email", unique=True)
 
     yield
@@ -47,14 +47,19 @@ async def validation_exception_handler(request: Request, exc: RequestValidationE
 
 
 # ── CORS ────────────────────────────────────────
-allowed_origins = list({frontend_url, "http://localhost:5173", "http://127.0.0.1:5173"})
+allowed_origins = [
+    frontend_url,
+    "http://localhost:5173",
+    "http://127.0.0.1:5173",
+    "https://the-leave-manager.vercel.app"
+]
 
 app.add_middleware(
     CORSMiddleware,
     allow_origins=allowed_origins,
     allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],
+    allow_headers=["Content-Type", "Authorization", "Accept", "Origin", "X-Requested-With"],
 )
 
 # ── Routers ─────────────────────────────────────
